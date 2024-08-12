@@ -2,7 +2,7 @@ import streamlit as st
 import timm
 import torch
 from PIL import Image
-from torchvision import transforms
+from torchvision import transforms, models
 
 # Define the classes
 classes = [
@@ -19,23 +19,22 @@ models_path = {
 }
 
 
-@st.cache_resource
-def load_vit_model():
-    # Initialize the Vision Transformer (ViT) model architecture
-    vit_model = timm.create_model('vit_base_patch16_224', pretrained=False)
+# @st.cache_resource
+def load_resnet_model():
+    # Initialize the ResNet-50 model architecture
+    resnet_model = models.resnet50(pretrained=False)
     num_classes = len(classes)
-    vit_model.head = torch.nn.Linear(vit_model.head.in_features, num_classes)
+    resnet_model.fc = torch.nn.Linear(resnet_model.fc.in_features, num_classes)
 
     # Load the saved state dictionary
-    vit_model.load_state_dict(torch.load(models_path.get('Vit-Model'), map_location=torch.device('cpu')))
+    resnet_model.load_state_dict(torch.load(models_path.get('Resnet50'), map_location=torch.device('cpu')))
 
-    vit_model.eval()
-    print('Vit-Model loaded successfully')
-    return vit_model
+    print('Resnet50 loaded successfully')
+    return resnet_model
 
 
 # Load the model
-vit_model = load_vit_model()
+resnet_model = load_resnet_model()()
 
 
 def classify_eye(model, image):
@@ -63,7 +62,6 @@ def classify_eye(model, image):
         output = model(image)
         _, predicted = torch.max(output.data, 1)
 
-    print('ok -> ',predicted.item())
     return classes[predicted.item()]
 
 
@@ -77,5 +75,5 @@ if uploaded_file is not None:
     st.write("")
 
     if st.button('Classify Image'):
-        result = classify_eye(vit_model, image)
+        result = classify_eye(resnet_model, image)
         st.write(f"Prediction: {result}")
