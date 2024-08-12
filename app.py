@@ -1,22 +1,14 @@
 import streamlit as st
-import timm
 import torch
 from PIL import Image
 from torchvision import transforms, models
 
 # Define the classes
 classes = [
+    "Cataract",
     "Diabetes",
-    "Normal Fundus",
-    "Cataract"
+    "Glaucoma",
 ]
-
-models_path = {
-    'Vit-Model': 'models/vit_base_patch16_224_best.pth',
-    'Efficientnet': 'models/efficientnet_b0_best.pth',
-    'Densenet': 'models/densenet121_best.pth',
-    'Resnet50': 'models/resnet50_best.pth'
-}
 
 
 # @st.cache_resource
@@ -27,26 +19,23 @@ def load_resnet_model():
     resnet_model.fc = torch.nn.Linear(resnet_model.fc.in_features, num_classes)
 
     # Load the saved state dictionary
-    resnet_model.load_state_dict(torch.load(models_path.get('Resnet50'), map_location=torch.device('cpu')))
+    resnet_model.load_state_dict(torch.load('models/resnet50_best.pth', map_location=torch.device('cpu')))
 
     print('Resnet50 loaded successfully')
     return resnet_model
 
 
 # Load the model
-resnet_model = load_resnet_model()()
+resnet_model = load_resnet_model()
 
 
 def classify_eye(model, image):
-    # Define the mean and std for normalization
-    mean = [0.485, 0.456, 0.406]
-    std = [0.229, 0.224, 0.225]
+    model = model.eval()
 
     # Define image transformations
     image_transforms = transforms.Compose([
         transforms.Resize((224, 224)),
         transforms.ToTensor(),
-        transforms.Normalize(mean=mean, std=std)
     ])
 
     # Preprocess the image
